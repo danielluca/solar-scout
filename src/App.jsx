@@ -48,8 +48,18 @@ const Gauge = ({ value }) => {
   );
 };
 
-const HourlyChart = ({ data, currentHour }) => (
-  <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+const HourlyChart = ({ data, currentHour }) => {
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const currentIdx = data.findIndex(d => d.hour === currentHour);
+    if (currentIdx < 0) return;
+    const barWidth = 28; // 24px bar + 4px gap
+    const containerWidth = scrollRef.current.clientWidth;
+    scrollRef.current.scrollLeft = barWidth * currentIdx - containerWidth / 2 + barWidth / 2;
+  }, [data, currentHour]);
+  return (
+  <div ref={scrollRef} style={{ overflowX: "auto", paddingBottom: 4 }}>
     <div style={{ display: "flex", gap: 4, minWidth: "max-content", alignItems: "flex-end" }}>
       {data.map((d, i) => {
         const cat = getCategory(d.uv);
@@ -68,7 +78,8 @@ const HourlyChart = ({ data, currentHour }) => (
       })}
     </div>
   </div>
-);
+  );
+};
 
 const EduCard = ({ id, icon, title, content, isOpen, onToggle }) => (
   <div onClick={() => onToggle(id)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 14, overflow: "hidden", cursor: "pointer", transition: "background 0.2s" }}>
