@@ -3,10 +3,8 @@ export function useHotelConfig() {
   const hotel   = p.get("hotel")   || "";
   const logo    = p.get("logo")    || "";
   const favicon = p.get("favicon") || "";
-  const raw     = p.get("color")   || "";
-  const color   = raw ? (raw.startsWith("#") ? raw : `#${raw}`) : "";
   const slug    = hotel ? hotel.toLowerCase().replace(/\s+/g, "-") : "demo";
   // logo wins; favicon domain falls back to Google's favicon CDN
   const resolvedLogo = logo || (favicon ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(favicon)}&sz=128` : "");
-  return { hotel, logo: resolvedLogo, color, slug, hasHotel: !!hotel };
+  return { hotel, logo: resolvedLogo, slug, hasHotel: !!hotel };
 }

@@ -24,7 +24,7 @@ const getTanStatus = (uvi) => {
   return "extreme";
 };
 
-const Gauge = ({ value, brandColor }) => {
+const Gauge = ({ value }) => {
   const cx = 150, cy = 148, r = 112, sw = 16, MAX = 11;
   const clamped = Math.min(Math.max(value, 0), MAX);
   const toAngle = (uv) => 180 - (uv / MAX) * 180;
@@ -40,9 +40,7 @@ const Gauge = ({ value, brandColor }) => {
       {SEGMENTS.map((seg, i) => {
         if (clamped <= seg.min) return null;
         const activeMax = Math.min(clamped, seg.max);
-        const color = brandColor || seg.color;
-        const glow  = brandColor ? `${brandColor}80` : seg.glow;
-        return <path key={`act${i}`} d={arc(toAngle(seg.min), toAngle(activeMax))} stroke={color} strokeWidth={sw} strokeLinecap={i === 0 || activeMax < seg.max ? "round" : "butt"} fill="none" style={{ filter: `drop-shadow(0 0 6px ${glow})` }} />;
+        return <path key={`act${i}`} d={arc(toAngle(seg.min), toAngle(activeMax))} stroke={seg.color} strokeWidth={sw} strokeLinecap={i === 0 || activeMax < seg.max ? "round" : "butt"} fill="none" style={{ filter: `drop-shadow(0 0 6px ${seg.glow})` }} />;
       })}
       <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${needleRot}deg)`, transition: "transform 1.4s cubic-bezier(0.22, 1.3, 0.45, 1)" }}>
         <line x1={cx - 10} y1={cy} x2={cx + r - sw - 3} y2={cy} stroke="rgba(255,255,255,0.95)" strokeWidth={2.5} strokeLinecap="round" style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.5))" }} />
@@ -54,7 +52,7 @@ const Gauge = ({ value, brandColor }) => {
   );
 };
 
-const HourlyChart = ({ data, currentHour, brandColor }) => (
+const HourlyChart = ({ data, currentHour }) => (
   <div style={{ overflowX: "auto", paddingBottom: 4 }}>
     <div style={{ display: "flex", gap: 4, minWidth: "max-content", alignItems: "flex-end" }}>
       {data.map((d, i) => {
@@ -63,7 +61,7 @@ const HourlyChart = ({ data, currentHour, brandColor }) => (
         const isPast = d.hour < currentHour;
         const barH = Math.max(3, (d.uv / 11) * 54);
         const label = d.hour === 0 ? "12a" : d.hour < 12 ? `${d.hour}a` : d.hour === 12 ? "12p" : `${d.hour - 12}p`;
-        const color = isCurrent && brandColor ? brandColor : cat.color;
+        const color = cat.color;
         return (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
             <span style={{ fontSize: 8.5, fontFamily: "'Space Grotesk', sans-serif", color: d.uv > 0.3 ? "rgba(255,255,255,0.75)" : "transparent" }}>{d.uv.toFixed(0)}</span>
@@ -199,8 +197,6 @@ export default function SolarScout() {
   const safeHours    = uvData?.filter((d) => d.uv >= 3 && d.uv <= 5) || [];
   const cautionHours = uvData?.filter((d) => d.uv > 5 && d.uv <= 7) || [];
 
-  const brandColor = cfg.color || null;
-
   const panel = {
     background: "rgba(255,255,255,0.11)",
     backdropFilter: "blur(24px)",
@@ -210,14 +206,9 @@ export default function SolarScout() {
     padding: 20,
   };
 
-  const tanCardStyle = brandColor
-    ? { bg: `${brandColor}22`, border: `${brandColor}66`, text: brandColor }
-    : null;
-
   const btnStyle = {
     width: "100%", padding: "16px 24px",
-    background: brandColor || "white",
-    color: brandColor ? "white" : "#0c4a6e",
+    background: "white", color: "#0c4a6e",
     border: "none", borderRadius: 14, fontSize: 15, fontWeight: 700,
     cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
     boxShadow: "0 4px 20px rgba(0,0,0,0.22)", transition: "transform 0.15s, box-shadow 0.15s",
@@ -268,7 +259,7 @@ export default function SolarScout() {
               <div style={{ display: "flex", gap: 2 }}>
                 {LANGS.map((l) => (
                   <button key={l} className="lang-btn" onClick={() => changeLang(l)}
-                    style={{ color: lang === l ? "white" : "rgba(255,255,255,0.45)", background: lang === l ? (brandColor || "rgba(255,255,255,0.18)") : "none" }}>
+                    style={{ color: lang === l ? "white" : "rgba(255,255,255,0.45)", background: lang === l ? "rgba(255,255,255,0.18)" : "none" }}>
                     {l.toUpperCase()}
                   </button>
                 ))}
@@ -309,7 +300,7 @@ export default function SolarScout() {
           {currentUV !== null && !loading && (
             <div className="fade-in">
               <div style={{ ...panel, textAlign: "center", marginBottom: 14 }}>
-                <Gauge value={currentUV} brandColor={brandColor} />
+                <Gauge value={currentUV} />
                 <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
                   {SEGMENTS.map((s) => (
                     <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.55)" }}>
@@ -324,14 +315,7 @@ export default function SolarScout() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 10, lineHeight: 1.2 }}>{advice.title}</div>
                     <div style={{ fontSize: 14, color: "rgba(255,255,255,0.83)", lineHeight: 1.65, marginBottom: 14 }}>{advice.body}</div>
-                    <div style={{
-                      padding: "10px 14px",
-                      background: tanCardStyle ? tanCardStyle.bg : tanStyle.bg,
-                      border: `1px solid ${tanCardStyle ? tanCardStyle.border : tanStyle.border}`,
-                      borderRadius: 10, fontSize: 13, fontWeight: 600,
-                      color: tanCardStyle ? tanCardStyle.text : tanStyle.text,
-                      fontFamily: "'Space Grotesk', sans-serif",
-                    }}>👉 {advice.action}</div>
+                    <div style={{ padding: "10px 14px", background: tanStyle.bg, border: `1px solid ${tanStyle.border}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: tanStyle.text, fontFamily: "'Space Grotesk', sans-serif" }}>👉 {advice.action}</div>
                   </div>
                   <div style={{ fontSize: 48, lineHeight: 1, flexShrink: 0 }}>{advice.icon}</div>
                 </div>
@@ -340,10 +324,10 @@ export default function SolarScout() {
               {uvData && (
                 <div style={{ ...panel, marginBottom: 14 }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>{t.ui.todayForecast}</div>
-                  <HourlyChart data={uvData} currentHour={curHour} brandColor={brandColor} />
+                  <HourlyChart data={uvData} currentHour={curHour} />
                   {safeHours.length > 0 && (
-                    <div style={{ marginTop: 14, padding: "10px 14px", background: tanCardStyle ? tanCardStyle.bg : "rgba(251,191,36,0.14)", border: `1px solid ${tanCardStyle ? tanCardStyle.border : "rgba(251,191,36,0.3)"}`, borderRadius: 10 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: tanCardStyle ? tanCardStyle.text : "#fbbf24", marginBottom: 3, fontFamily: "'Space Grotesk', sans-serif" }}>✨ {t.ui.primeTanning} ({t.ui.primeTanSub})</div>
+                    <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(251,191,36,0.14)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", marginBottom: 3, fontFamily: "'Space Grotesk', sans-serif" }}>✨ {t.ui.primeTanning} ({t.ui.primeTanSub})</div>
                       <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)" }}>{safeHours[0].hour}:00 – {safeHours[safeHours.length - 1].hour + 1}:00</div>
                     </div>
                   )}
