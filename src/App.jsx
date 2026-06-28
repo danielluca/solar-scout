@@ -267,31 +267,30 @@ export default function SolarScout() {
             </div>
           </div>
 
-          {/* Welcome / Loading / Error — all in one card */}
-          {!loc && (
+          {/* Loading — shown whenever a fetch is in flight, regardless of loc */}
+          {loading && (
+            <div style={{ ...panel, textAlign: "center", padding: "40px 24px", marginBottom: 20 }}>
+              <div style={{ fontSize: 52, marginBottom: 16, display: "inline-block", animation: "spin 2.5s linear infinite" }}>🌍</div>
+              <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 6 }}>{t.ui.loading.headline}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{t.ui.loading.sub}</div>
+            </div>
+          )}
+
+          {/* Welcome — only before a location is chosen and not loading */}
+          {!loc && !loading && (
             <div className="fade-in" style={{ ...panel, textAlign: "center", padding: "40px 24px", marginBottom: 20 }}>
-              {loading ? (
-                <>
-                  <div style={{ fontSize: 52, marginBottom: 16, display: "inline-block", animation: "spin 2.5s linear infinite" }}>🌍</div>
-                  <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 6 }}>{t.ui.loading.headline}</div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{t.ui.loading.sub}</div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 72, marginBottom: 16, lineHeight: 1 }}>🏖️</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 10, lineHeight: 1.2 }}>{t.ui.welcome.headline}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.72)", marginBottom: 28, lineHeight: 1.65 }}>{t.ui.welcome.sub}</div>
-                  <button onClick={geolocate} style={btnStyle}
-                    onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.98)"; }}
-                    onMouseUp={(e)   => { e.currentTarget.style.transform = "scale(1)"; }}>
-                    {t.ui.welcome.button}
-                  </button>
-                  {error && (
-                    <div style={{ marginTop: 16, padding: "10px 14px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, fontSize: 13, color: "rgba(255,255,255,0.88)", lineHeight: 1.5 }}>
-                      ⚠️ {error}
-                    </div>
-                  )}
-                </>
+              <div style={{ fontSize: 72, marginBottom: 16, lineHeight: 1 }}>🏖️</div>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 10, lineHeight: 1.2 }}>{t.ui.welcome.headline}</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.72)", marginBottom: 28, lineHeight: 1.65 }}>{t.ui.welcome.sub}</div>
+              <button onClick={geolocate} style={btnStyle}
+                onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.98)"; }}
+                onMouseUp={(e)   => { e.currentTarget.style.transform = "scale(1)"; }}>
+                {t.ui.welcome.button}
+              </button>
+              {error && (
+                <div style={{ marginTop: 16, padding: "10px 14px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, fontSize: 13, color: "rgba(255,255,255,0.88)", lineHeight: 1.5 }}>
+                  ⚠️ {error}
+                </div>
               )}
             </div>
           )}
