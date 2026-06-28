@@ -29,7 +29,7 @@ const Gauge = ({ value, brandColor }) => {
   const clamped = Math.min(Math.max(value, 0), MAX);
   const toAngle = (uv) => 180 - (uv / MAX) * 180;
   const pol = (deg) => { const rad = (deg * Math.PI) / 180; return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) }; };
-  const arc = (a1, a2) => { const s = pol(a1), e = pol(a2); const large = a1 - a2 > 180 ? 1 : 0; return `M${s.x.toFixed(2)},${s.y.toFixed(2)} A${r},${r} 0 ${large},0 ${e.x.toFixed(2)},${e.y.toFixed(2)}`; };
+  const arc = (a1, a2) => { const s = pol(a1), e = pol(a2); const large = a1 - a2 > 180 ? 1 : 0; return `M${s.x.toFixed(2)},${s.y.toFixed(2)} A${r},${r} 0 ${large},1 ${e.x.toFixed(2)},${e.y.toFixed(2)}`; };
   const needleRot = -(180 - (clamped / MAX) * 180);
   const cat = getCategory(value);
   return (
