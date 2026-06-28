@@ -57,6 +57,23 @@ export const T = {
         hint:       "Sunscreen protects for 2 hours — regardless of SPF. Reapply immediately after swimming.",
         notifBody:  (spf) => `Time to reapply! You applied ${spf}.`,
       },
+      localConditions: {
+        title: "📍 Local Conditions",
+        solarNoon: (time) => `UV peaks today at ${time}`,
+        solarNoonLabel: "Solar noon",
+        cloud: {
+          clear:         "Clear skies — UV hits you unfiltered.",
+          partlyCloudy:  "Partly cloudy — UV drops less than 20%. Sunscreen still essential.",
+          variable:      "Variable clouds — UV may drop up to 50%, but clouds deceive.",
+          heavy:         (uv) => `Heavy clouds — UV still at ~${uv}. Most people underestimate this.`,
+          overcast:      "Overcast — UV significantly reduced, but not zero. Protect for long exposure.",
+        },
+        coastal: {
+          title: "🌊 Coastal Warning",
+          body:  (uv) => `Water and sand reflect up to 25% additional UV. Effective UV exposure at the beach: ~${uv}. Chin, nose and shoulders are especially affected.`,
+        },
+        elevation: (m, boost) => `⛰️ At ${m}m altitude, UV is ~${boost}% stronger than at sea level.`,
+      },
     },
   },
 
@@ -118,6 +135,23 @@ export const T = {
         hint:       "Sonnencreme schützt für 2h — unabhängig vom LSF. Nach dem Baden sofort neu auftragen.",
         notifBody:  (spf) => `Zeit zum Nachcremen! Du hast ${spf} aufgetragen.`,
       },
+      localConditions: {
+        title: "📍 Standort & Bedingungen",
+        solarNoon: (time) => `UV-Peak heute um ${time}`,
+        solarNoonLabel: "Sonnenhöchststand",
+        cloud: {
+          clear:         "Wolkenlos — UV trifft Sie ungefiltert.",
+          partlyCloudy:  "Leicht bewölkt — UV-Reduktion unter 20%. Sonnencreme bleibt Pflicht.",
+          variable:      "Wechselhafte Bewölkung — UV kann bis zu 50% reduziert sein, aber Wolken trügen.",
+          heavy:         (uv) => `Stark bewölkt — UV trotzdem bei ~${uv}. Viele unterschätzen das.`,
+          overcast:      "Bedeckt — UV deutlich reduziert, aber nicht null. Bei längerem Aufenthalt trotzdem schützen.",
+        },
+        coastal: {
+          title: "🌊 Küstenwarnung",
+          body:  (uv) => `Wasser und Sand reflektieren bis zu 25% UV zurück. Effektive UV-Belastung am Strand: ~${uv}. Besonders Kinn, Nase und Schultern sind betroffen.`,
+        },
+        elevation: (m, boost) => `⛰️ Auf ${m}m Höhe ist UV ca. ${boost}% stärker als auf Meereshöhe.`,
+      },
     },
   },
 
@@ -178,6 +212,23 @@ export const T = {
         reset:      "Επαναφορά",
         hint:       "Το αντηλιακό προστατεύει για 2ω — ανεξάρτητα από το SPF. Ξαναβάλτε αμέσως μετά το κολύμπι.",
         notifBody:  (spf) => `Ώρα για επανάληψη! Εφαρμόσατε ${spf}.`,
+      },
+      localConditions: {
+        title: "📍 Τοπικές Συνθήκες",
+        solarNoon: (time) => `Κορύφωση UV σήμερα στις ${time}`,
+        solarNoonLabel: "Ηλιακό μεσημέρι",
+        cloud: {
+          clear:         "Καθαρός ουρανός — η UV φτάνει αφιλτράριστη.",
+          partlyCloudy:  "Μερικώς συννεφιά — μείωση UV κάτω από 20%. Αντηλιακό απαραίτητο.",
+          variable:      "Μεταβλητή νέφωση — η UV μπορεί να μειωθεί έως 50%, αλλά τα σύννεφα απατούν.",
+          heavy:         (uv) => `Πυκνή νέφωση — η UV παραμένει ~${uv}. Πολλοί το υποτιμούν.`,
+          overcast:      "Συννεφιασμένος — η UV μειώθηκε σημαντικά, αλλά όχι μηδέν.",
+        },
+        coastal: {
+          title: "🌊 Προειδοποίηση Παραλίας",
+          body:  (uv) => `Το νερό και η άμμος αντανακλούν έως 25% επιπλέον UV. Αποτελεσματική έκθεση στην παραλία: ~${uv}.`,
+        },
+        elevation: (m, boost) => `⛰️ Στα ${m}m υψόμετρο, η UV είναι ~${boost}% ισχυρότερη.`,
       },
     },
   },

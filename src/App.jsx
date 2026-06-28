@@ -297,6 +297,126 @@ const SunscreenTimer = ({ currentUV, t }) => {
   );
 };
 
+// ── Local Conditions ─────────────────────────────────────────────────────────
+
+const uvTimelineColor = (uv) => {
+  if (uv <= 2)  return "#22c55e";
+  if (uv <= 5)  return "#eab308";
+  if (uv <= 7)  return "#f97316";
+  if (uv <= 10) return "#ef4444";
+  return "#a855f7";
+};
+
+const timePct = (isoStr) => {
+  if (!isoStr) return 0;
+  const d = new Date(isoStr);
+  return ((d.getHours() * 60 + d.getMinutes()) / 1440) * 100;
+};
+
+const LocalConditions = ({ uvData, currentUV, currentCloudcover, sunrise, sunset, isCoastal, elevation, t }) => {
+  if (!uvData || currentUV === null) return null;
+
+  const gradient = `linear-gradient(to right, ${uvData.map((d, i) => {
+    const c = uvTimelineColor(d.uv);
+    return `${c} ${(i / 24 * 100).toFixed(1)}%, ${c} ${((i + 1) / 24 * 100).toFixed(1)}%`;
+  }).join(", ")})`;
+
+  const nowPct     = timePct(new Date().toISOString().slice(0, 16));
+  const risePct    = sunrise ? timePct(sunrise) : null;
+  const setPct     = sunset  ? timePct(sunset)  : null;
+  const noonPct    = risePct !== null && setPct !== null ? (risePct + setPct) / 2 : null;
+
+  let solarNoonStr = null;
+  if (sunrise && sunset) {
+    const noon = new Date((new Date(sunrise).getTime() + new Date(sunset).getTime()) / 2);
+    solarNoonStr = noon.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const cc        = currentCloudcover ?? 0;
+  const reducedUV = (currentUV * (1 - cc / 100)).toFixed(1);
+  let cloudIcon, cloudMsg;
+  if      (cc <= 15) { cloudIcon = "☀️";  cloudMsg = t.localConditions.cloud.clear; }
+  else if (cc <= 40) { cloudIcon = "🌤️"; cloudMsg = t.localConditions.cloud.partlyCloudy; }
+  else if (cc <= 70) { cloudIcon = "⛅";  cloudMsg = t.localConditions.cloud.variable; }
+  else if (cc <= 90) { cloudIcon = "🌥️"; cloudMsg = t.localConditions.cloud.heavy(reducedUV); }
+  else               { cloudIcon = "☁️";  cloudMsg = t.localConditions.cloud.overcast; }
+
+  const beachUV  = (currentUV * 1.25).toFixed(1);
+  const elevBoost = Math.round(elevation / 1000 * 10);
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.11)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 20, padding: 20, marginBottom: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+        {t.localConditions.title}
+      </div>
+
+      {/* Sun Timeline */}
+      {risePct !== null && setPct !== null && (
+        <>
+          <div style={{ position: "relative", marginBottom: 4 }}>
+            {/* Icons row above bar */}
+            <div style={{ position: "relative", height: 22, marginBottom: 2 }}>
+              <span style={{ position: "absolute", left: `${risePct}%`, transform: "translateX(-50%)", fontSize: 14, lineHeight: 1 }}>🌅</span>
+              {noonPct !== null && (
+                <span style={{ position: "absolute", left: `${noonPct}%`, transform: "translateX(-50%)", fontSize: 9, color: "rgba(255,255,255,0.4)", top: 6, whiteSpace: "nowrap" }}>
+                  {t.localConditions.solarNoonLabel}
+                </span>
+              )}
+              <span style={{ position: "absolute", left: `${setPct}%`, transform: "translateX(-50%)", fontSize: 14, lineHeight: 1 }}>🌇</span>
+            </div>
+            {/* Bar */}
+            <div style={{ position: "relative", height: 10, borderRadius: 5, background: gradient }}>
+              {/* Now marker */}
+              <div style={{ position: "absolute", left: `${nowPct}%`, top: -4, transform: "translateX(-50%)", width: 2, height: 18, background: "white", borderRadius: 1, zIndex: 2 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white", position: "absolute", top: -5, left: -2 }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", marginBottom: 14 }}>
+            🌅 {new Date(sunrise).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · 🌇 {new Date(sunset).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        </>
+      )}
+
+      <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 12 }} />
+
+      {/* Solar noon */}
+      {solarNoonStr && (
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginBottom: 10 }}>
+          ☀️ {t.localConditions.solarNoon(solarNoonStr)}
+        </div>
+      )}
+
+      {/* Cloud cover */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: elevation > 500 || isCoastal ? 10 : 0 }}>
+        <span style={{ background: "rgba(255,255,255,0.12)", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 600, flexShrink: 0, whiteSpace: "nowrap" }}>
+          {cloudIcon} {cc}%
+        </span>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.82)", lineHeight: 1.5 }}>{cloudMsg}</span>
+      </div>
+
+      {/* Elevation */}
+      {elevation > 500 && (
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: isCoastal ? 10 : 0 }}>
+          {t.localConditions.elevation(Math.round(elevation), elevBoost)}
+        </div>
+      )}
+
+      {/* Coastal warning */}
+      {isCoastal && (
+        <div style={{ background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 10, padding: "10px 14px" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(56,189,248,0.95)", marginBottom: 6, fontFamily: "'Space Grotesk', sans-serif" }}>
+            {t.localConditions.coastal.title}
+          </div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", lineHeight: 1.6 }}>
+            {t.localConditions.coastal.body(beachUV)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 const setLangParam = (lang) => {
@@ -314,16 +434,21 @@ export default function SolarScout() {
     return ["de", "en", "gr"].includes(l) ? l : "en";
   };
 
-  const [lang, setLang]           = useState(initLang);
-  const [loc, setLoc]             = useState(null);
-  const [locName, setLocName]     = useState("");
-  const [uvData, setUVData]       = useState(null);
-  const [currentUV, setCurrentUV] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
-  const [time, setTime]           = useState(new Date());
-  const [openCard, setOpenCard]   = useState(null);
-  const [scanCount, setScanCount] = useState(null);
+  const [lang, setLang]                     = useState(initLang);
+  const [loc, setLoc]                       = useState(null);
+  const [locName, setLocName]               = useState("");
+  const [uvData, setUVData]                 = useState(null);
+  const [currentUV, setCurrentUV]           = useState(null);
+  const [loading, setLoading]               = useState(false);
+  const [error, setError]                   = useState(null);
+  const [time, setTime]                     = useState(new Date());
+  const [openCard, setOpenCard]             = useState(null);
+  const [scanCount, setScanCount]           = useState(null);
+  const [sunrise, setSunrise]               = useState(null);
+  const [sunset, setSunset]                 = useState(null);
+  const [currentCloudcover, setCurrentCloudcover] = useState(null);
+  const [isCoastal, setIsCoastal]           = useState(false);
+  const [elevation, setElevation]           = useState(0);
 
   const t = T[lang] || T.en;
 
@@ -348,27 +473,54 @@ export default function SolarScout() {
     setError(null);
     try {
       const [uvRes, geoRes] = await Promise.all([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=uv_index&timezone=auto&forecast_days=1`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=uv_index,cloudcover,temperature_2m&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1`),
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, { headers: { "User-Agent": "SolarScout/1.0 (educational)" } }),
       ]);
       const uvJson  = await uvRes.json();
       const geoJson = await geoRes.json();
+
+      // Location name
       const addr = geoJson.address || {};
       const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "Your location";
       setLocName(`${city}${addr.country ? `, ${addr.country}` : ""}`);
-      const processed = uvJson.hourly.time.map((ts, i) => ({
-        hour: parseInt(ts.split("T")[1]),
-        uv:   Math.max(0, uvJson.hourly.uv_index[i] ?? 0),
-      }));
+
+      // Coastal detection
+      const coastalAddrFields = ["beach", "water", "sea", "bay", "coastline"];
+      const coastalKeywords = ["beach","strand","mare","costa","coast","bay","plage","παραλία","θαλ","nisi","nea"];
+      const coastal =
+        coastalAddrFields.some((f) => addr[f] !== undefined) ||
+        ["beach","coastline","sand"].some((v) => (addr.natural || "").toLowerCase().includes(v)) ||
+        (addr.leisure || "").toLowerCase().includes("beach") ||
+        ["county","municipality","city"].some((f) => coastalKeywords.some((k) => (addr[f] || "").toLowerCase().includes(k)));
+      setIsCoastal(coastal);
+
+      // Hourly data
       const curHour = new Date().getHours();
+      const processed = uvJson.hourly.time.map((ts, i) => ({
+        hour:        parseInt(ts.split("T")[1]),
+        uv:          Math.max(0, uvJson.hourly.uv_index[i] ?? 0),
+        cloudcover:  uvJson.hourly.cloudcover?.[i] ?? 0,
+        temperature: uvJson.hourly.temperature_2m?.[i] ?? null,
+      }));
       const curEntry = [...processed].reverse().find((d) => d.hour <= curHour) || processed[0];
       setCurrentUV(curEntry?.uv ?? 0);
+      setCurrentCloudcover(curEntry?.cloudcover ?? 0);
       setUVData(processed);
+
+      // Daily sunrise/sunset
+      setSunrise(uvJson.daily?.sunrise?.[0] ?? null);
+      setSunset(uvJson.daily?.sunset?.[0] ?? null);
     } catch {
       setError(t.ui.error.fetch);
     } finally {
       setLoading(false);
     }
+
+    // Fire-and-forget elevation
+    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}`)
+      .then((r) => r.json())
+      .then((d) => setElevation(d.elevation?.[0] ?? 0))
+      .catch(() => setElevation(0));
   };
 
   const geolocate = () => {
@@ -536,6 +688,17 @@ export default function SolarScout() {
                   )}
                 </div>
               )}
+
+              <LocalConditions
+                uvData={uvData}
+                currentUV={currentUV}
+                currentCloudcover={currentCloudcover}
+                sunrise={sunrise}
+                sunset={sunset}
+                isCoastal={isCoastal}
+                elevation={elevation}
+                t={t.ui}
+              />
 
               <button onClick={() => loc && fetchAll(loc.lat, loc.lon)}
                 style={{ width: "100%", padding: "13px", marginBottom: 20, background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.75)", borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", transition: "background 0.2s" }}
