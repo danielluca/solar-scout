@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useHotelConfig } from "./useHotelConfig";
 import { T } from "./translations";
 
@@ -103,6 +103,194 @@ const getBg = (uv) => {
   if (uv < 10) return "linear-gradient(160deg, #7f1d1d 0%, #dc2626 50%, #fca5a5 100%)";
   return "linear-gradient(160deg, #4c1d95 0%, #7c3aed 50%, #c4b5fd 100%)";
 };
+
+// ── Sunscreen Timer ──────────────────────────────────────────────────────────
+
+const SPF_OPTIONS = [15, 30, 50, "50+"];
+const TIMER_DURATION = 7200; // 2 hours in seconds
+const STORAGE_KEY = "ss_timer";
+const NOTIF_KEY   = "ss_notif_permission";
+
+const spfDefault = (uv) => {
+  if (uv < 3) return 15;
+  if (uv < 6) return 30;
+  if (uv < 8) return 50;
+  return "50+";
+};
+
+const fmtCountdown = (secs) => {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+const SunscreenTimer = ({ currentUV, t }) => {
+  const [spf, setSpf]           = useState(() => spfDefault(currentUV));
+  const [appliedAt, setAppliedAt] = useState(null); // ms timestamp
+  const [timeLeft, setTimeLeft]  = useState(TIMER_DURATION);
+  const [expired, setExpired]    = useState(false);
+  const notifRef = useRef(null);
+
+  // Restore from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const { spf: s, appliedAt: at } = JSON.parse(raw);
+      const elapsed = Math.floor((Date.now() - at) / 1000);
+      setSpf(s);
+      setAppliedAt(at);
+      if (elapsed >= TIMER_DURATION) {
+        setTimeLeft(0);
+        setExpired(true);
+      } else {
+        setTimeLeft(TIMER_DURATION - elapsed);
+      }
+    } catch {}
+  }, []);
+
+  // Countdown tick — re-runs whenever appliedAt changes or expiry resets
+  useEffect(() => {
+    if (!appliedAt || expired) return;
+    const iv = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - appliedAt) / 1000);
+      const left = Math.max(0, TIMER_DURATION - elapsed);
+      setTimeLeft(left);
+      if (left === 0) { setExpired(true); clearInterval(iv); }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [appliedAt, expired]);
+
+  const scheduleNotif = (spfVal, delaySecs) => {
+    if (notifRef.current) clearTimeout(notifRef.current);
+    notifRef.current = setTimeout(() => {
+      new Notification("🧴 Solar Scout", { body: t.ui.timer.notifBody(`SPF ${spfVal}`) });
+    }, delaySecs * 1000);
+  };
+
+  const startTimer = async (spfVal, isReapply = false) => {
+    const now = Date.now();
+    setAppliedAt(now);
+    setTimeLeft(TIMER_DURATION);
+    setExpired(false);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ spf: spfVal, appliedAt: now }));
+    if ("Notification" in window) {
+      const stored = localStorage.getItem(NOTIF_KEY);
+      if (!stored && !isReapply) {
+        const perm = await Notification.requestPermission();
+        localStorage.setItem(NOTIF_KEY, perm);
+        if (perm === "granted") scheduleNotif(spfVal, TIMER_DURATION);
+      } else if (stored === "granted") {
+        scheduleNotif(spfVal, TIMER_DURATION);
+      }
+    }
+  };
+
+  const reset = () => {
+    if (notifRef.current) clearTimeout(notifRef.current);
+    setAppliedAt(null);
+    setTimeLeft(TIMER_DURATION);
+    setExpired(false);
+    localStorage.removeItem(STORAGE_KEY);
+    setSpf(spfDefault(currentUV));
+  };
+
+  const isRunning  = !!appliedAt && !expired;
+  const targetTime = appliedAt
+    ? new Date(appliedAt + TIMER_DURATION * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
+  const progress = isRunning ? (timeLeft / TIMER_DURATION) * 100 : 0;
+
+  return (
+    <div style={{
+      background:          expired ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.11)",
+      backdropFilter:      "blur(24px)",
+      WebkitBackdropFilter:"blur(24px)",
+      border:              expired ? "1px solid rgba(251,191,36,0.5)" : "1px solid rgba(255,255,255,0.18)",
+      borderRadius: 20, padding: 20, marginBottom: 14,
+      transition: "background 0.4s, border-color 0.4s",
+    }}>
+      {/* Section label */}
+      <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+        {t.ui.timer.title}
+      </div>
+
+      {/* SPF selector — greyed-out while timer is running */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+        {SPF_OPTIONS.map((s) => {
+          const active = spf === s;
+          return (
+            <button key={s} onClick={() => { if (!isRunning) setSpf(s); }}
+              style={{
+                flex: 1, padding: "8px 2px", borderRadius: 10,
+                background: active ? "white" : "transparent",
+                border:     active ? "1px solid white" : "1px solid rgba(255,255,255,0.28)",
+                color:      active ? "#0c4a6e" : "rgba(255,255,255,0.65)",
+                fontSize: 12, fontWeight: 700,
+                cursor: isRunning ? "default" : "pointer",
+                fontFamily: "'Space Grotesk', sans-serif",
+                opacity: isRunning && !active ? 0.4 : 1,
+                transition: "all 0.15s",
+              }}>
+              {s === "50+" ? "SPF 50+" : `SPF ${s}`}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Running: countdown + progress bar */}
+      {isRunning && (
+        <>
+          <div style={{ textAlign: "center", marginBottom: 4 }}>
+            <div style={{ fontSize: 42, fontWeight: 800, fontFamily: "'Space Grotesk', sans-serif", color: "#fbbf24", lineHeight: 1, letterSpacing: "-1px" }}>
+              {fmtCountdown(timeLeft)}
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
+              {t.ui.timer.reapplyAt(`SPF ${spf}`, targetTime)}
+            </div>
+          </div>
+          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "14px 0 6px" }}>
+            <div style={{ height: "100%", borderRadius: 2, background: "#fbbf24", width: `${progress}%`, transition: "width 1s linear" }} />
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <button onClick={reset} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.38)", fontSize: 12, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", padding: 0 }}>
+              {t.ui.timer.reset}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Expired: pulsing alert + reapply button */}
+      {expired && (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Space Grotesk', sans-serif", color: "#fbbf24", animation: "pulse 1.4s ease-in-out infinite", marginBottom: 14 }}>
+            {t.ui.timer.expired}
+          </div>
+          <button onClick={() => startTimer(spf, true)}
+            style={{ width: "100%", padding: "13px", background: "rgba(251,191,36,0.25)", border: "1px solid rgba(251,191,36,0.5)", color: "white", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif" }}>
+            {t.ui.timer.reapplied}
+          </button>
+        </div>
+      )}
+
+      {/* Default: apply button */}
+      {!appliedAt && (
+        <button onClick={() => startTimer(spf)}
+          style={{ width: "100%", padding: "13px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.28)", color: "white", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif" }}>
+          {t.ui.timer.applied}
+        </button>
+      )}
+
+      {/* Educational hint */}
+      <div style={{ marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.55 }}>
+        {t.ui.timer.hint}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const setLangParam = (lang) => {
   const p = new URLSearchParams(window.location.search);
@@ -226,6 +414,7 @@ export default function SolarScout() {
         ::-webkit-scrollbar-track { background: transparent; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
         .fade-in { animation: fadeIn 0.4s ease both; }
         .lang-btn { background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; padding: 3px 6px; border-radius: 6px; transition: background 0.15s; }
         .lang-btn:hover { background: rgba(255,255,255,0.15); }
@@ -319,6 +508,8 @@ export default function SolarScout() {
                   <div style={{ fontSize: 48, lineHeight: 1, flexShrink: 0 }}>{advice.icon}</div>
                 </div>
               </div>
+
+              <SunscreenTimer currentUV={currentUV} t={t} />
 
               {uvData && (
                 <div style={{ ...panel, marginBottom: 14 }}>
