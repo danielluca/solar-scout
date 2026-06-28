@@ -187,6 +187,7 @@ export default function SolarScout() {
     );
   };
 
+  const curHour   = time.getHours();
   const tanStatus = currentUV !== null ? getTanStatus(currentUV) : "none";
   const peakHour  = uvData ? uvData.reduce((p, d) => d.uv > p.uv ? d : p, uvData[0]).hour : 13;
   const declining = uvData ? curHour > peakHour : false;
@@ -195,7 +196,6 @@ export default function SolarScout() {
     ? { ...baseAdvice, ...baseAdvice.declining }
     : baseAdvice;
   const tanStyle  = TAN_STYLES[tanStatus] || TAN_STYLES.none;
-  const curHour   = time.getHours();
   const safeHours    = uvData?.filter((d) => d.uv >= 3 && d.uv <= 5) || [];
   const cautionHours = uvData?.filter((d) => d.uv > 5 && d.uv <= 7) || [];
 
