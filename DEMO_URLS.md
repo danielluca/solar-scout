@@ -19,13 +19,21 @@ Paste any of these into your browser to preview white-label configurations.
 
 ---
 
+## Real hotel favicon (auto-fetched)
+```
+/?hotel=Hilton+Crete&favicon=hilton.com&color=%230057B8&lang=en
+```
+
+---
+
 ## Parameters reference
 
-| Param    | Description                              | Example                  |
-|----------|------------------------------------------|--------------------------|
-| `hotel`  | Hotel display name                       | `Villa+Aegean`           |
-| `logo`   | Full URL to hotel logo image             | `https://...`            |
-| `color`  | Brand hex color (encode `#` as `%23`)    | `%23E8834B`              |
-| `lang`   | Language: `en`, `de`, or `gr`           | `de`                     |
+| Param     | Description                                        | Example                  |
+|-----------|----------------------------------------------------|--------------------------|
+| `hotel`   | Hotel display name                                 | `Villa+Aegean`           |
+| `logo`    | Full URL to hotel logo image (takes priority)      | `https://...`            |
+| `favicon` | Hotel domain — logo auto-fetched via Google CDN    | `hilton.com`             |
+| `color`   | Brand hex color (encode `#` as `%23`)              | `%23E8834B`              |
+| `lang`    | Language: `en`, `de`, or `gr`                      | `de`                     |
 
 Omit all params to show default Solar Scout branding.
