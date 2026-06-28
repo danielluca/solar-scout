@@ -42,12 +42,8 @@ const Gauge = ({ value }) => {
         const activeMax = Math.min(clamped, seg.max);
         return <path key={`act${i}`} d={arc(toAngle(seg.min), toAngle(activeMax))} stroke={seg.color} strokeWidth={sw} strokeLinecap={i === 0 || activeMax < seg.max ? "round" : "butt"} fill="none" style={{ filter: `drop-shadow(0 0 6px ${seg.glow})` }} />;
       })}
-      <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${needleRot}deg)`, transition: "transform 1.4s cubic-bezier(0.22, 1.3, 0.45, 1)" }}>
-        <line x1={cx - 10} y1={cy} x2={cx + r - sw - 3} y2={cy} stroke="rgba(255,255,255,0.95)" strokeWidth={2.5} strokeLinecap="round" style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.5))" }} />
-      </g>
-      <circle cx={cx} cy={cy} r={10} fill="rgba(255,255,255,0.95)" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))" }} />
-      <text x={cx} y={cy + 34} textAnchor="middle" fontSize="40" fontWeight="800" fill={cat.color} fontFamily="'Space Grotesk', sans-serif" style={{ filter: `drop-shadow(0 0 16px ${cat.glow})` }}>{value.toFixed(1)}</text>
-      <text x={cx} y={cy + 52} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="Inter, sans-serif" letterSpacing="3">UV INDEX</text>
+      <text x={cx} y={cy + 8} textAnchor="middle" fontSize="64" fontWeight="800" fill={cat.color} fontFamily="'Space Grotesk', sans-serif" style={{ filter: `drop-shadow(0 0 16px ${cat.glow})` }}>{value.toFixed(1)}</text>
+      <text x={cx} y={cy + 26} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="Inter, sans-serif" letterSpacing="3">UV INDEX</text>
     </svg>
   );
 };
